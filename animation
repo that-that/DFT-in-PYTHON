@@ -13,13 +13,13 @@ field = DynamicField(
     size=n_neurons,
     h=-5.0,
     tau=80.0,
-    sigma_exc=5.0,
-    a_exc=1.0,
-    sigma_inh=12.0,
-    a_inh=0.5,
+    sigma_exc=4.5,
+    a_exc=1.9,
+    sigma_inh=9.0,
+    a_inh=0.55,
     k_global=0.01,
     beta=4.0,
-    noise_std=0.1,
+    noise_std=0.4,
     dt=1.0
 )
 #stimulus
@@ -28,11 +28,14 @@ stim_left = gaussian_input(x, center=60, sigma=5.0, amplitude=8.0)
 stim_right = gaussian_input(x, center=140, sigma=5.0, amplitude=8.0)
 stimulus = stim_left + stim_right
 
+#middle stim
+stim_mid = gaussian_input(x, center = 100, sigma = 5.0, amplitude=8.0)
+
 steps_per_frame = 10  # 10ms per animation frame
 
 n_encode_frames = 400  # 4000ms
-n_delay_frames = 25    # 250ms
-n_probe_frames = 75    # 750ms
+n_delay_frames = 250    # 2500ms middle input added, side inputs removed
+n_probe_frames = 250    # 2500ms middle input removed, ideall 3 stable representations?
 n_total_frames = n_encode_frames + n_delay_frames + n_probe_frames
 
 
@@ -62,6 +65,7 @@ axes[2].set_ylim(-0.1, 1.1)
 axes[2].set_ylabel('Firing rate')
 axes[2].set_title('Output g(u)')
 
+
 # Phase label
 time_text = axes[0].text(0.02, 0.95, '', transform=axes[0].transAxes,
                           fontsize=12, fontweight='bold',
@@ -80,7 +84,7 @@ def get_phase(frame):
         return f'ENCODING  t={elapsed}ms', stimulus
     elif frame < n_encode_frames + n_delay_frames:
         elapsed = (frame - n_encode_frames) * steps_per_frame + 4000
-        return f'DELAY (no input)  t={elapsed}ms', None
+        return f'DELAY (no input)  t={elapsed}ms', stim_mid
     else:
         elapsed = (frame - n_encode_frames - n_delay_frames) * steps_per_frame + 4250
         return f'PROBE  t={elapsed}ms', None
@@ -119,3 +123,8 @@ def update(frame):
 ani = FuncAnimation(fig, update, frames=n_total_frames,
                     interval=20, blit=True, repeat=False)
 plt.show()
+
+
+#debug/graph kernel
+#getting type error rn need to figure out what type field.kernel is
+#field.plot_kernel()

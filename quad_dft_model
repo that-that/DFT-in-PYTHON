@@ -1,8 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from scipy.ndimage import convolve1d
-from scipy.ndimage import convolve
 from dft_draft2 import DynamicField, gaussian_input
 
 class QuadTaskModel:

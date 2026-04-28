@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.ndimage import convolve1d
 from scipy.ndimage import convolve
+import matplotlib.pyplot as plt
 
 class DynamicField():
     def __init__(self, name, size, h=-5.0, tau = 80.0,
@@ -8,6 +9,8 @@ class DynamicField():
                  sigma_inh = 10.0, a_inh= 0.3,
                  k_global = 0.0, beta = 4.0,
                  noise_std = 0.1, dt = 1.0, kernel_size = None):
+        
+
         self.name = name
         self.dt = dt
         self.tau = tau
@@ -113,6 +116,11 @@ class DynamicField():
             self.kernel_params['a_inh'] = a_inh
 
         self.kernel = self.build_kernel(**self.kernel_params)
+    
+    def plot_kernel(self):
+        plt.imshow(self.kernel)
+        plt.colorbar()
+        plt.show()
             
 
 def gaussian_input(x, center, sigma, amplitude):
