@@ -1,0 +1,186 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from scipy.ndimage import convolve1d
+from scipy.ndimage import convolve
+from dft_draft2 import DynamicField, gaussian_input
+
+class QuadTaskModel:
+    
+    def __init__(self):
+        self.spatial_wm = DynamicField(
+            name = 'spatial_wm',
+            size = 200,
+            h=-5.0, tau=80.0,
+            sigma_exc=5.0, a_exc=0.8,
+            sigma_inh=12.0, a_inh=0.4,
+            k_global=0.01
+        )
+
+
+        #need to understand how color attn should be different from other fields
+        self.color_attn = DynamicField(
+            name = 'color_attn',
+            size = 50,
+            h=-8.0, tau=60.0, #lower resting state, taller peaks? 
+            sigma_exc=3.0, a_exc=0.6,
+            sigma_inh=8.0, a_inh=0.25
+        )
+
+        self.shape_attn = DynamicField(
+            name = 'shape_attn',
+            size = 50,
+            h=-8.0, tau=60.0,
+            sigma_exc=3.0, a_exc=0.6,
+            sigma_inh=8.0, a_inh=0.25,
+        )
+
+        self.color_space = DynamicField(
+            name = 'color__space',
+            size = (50,200),
+            h=-6.0, tau=80.0,
+            sigma_exc=4.0, a_exc=0.7,
+            sigma_inh=10.0, a_inh=0.3
+        )
+
+        self.shape_space = DynamicField(
+            name = 'shape_space',
+            size = (50, 200),
+            h=-6.0, tau=80.0,
+            sigma_exc=4.0, a_exc=0.7,
+            sigma_inh=10.0, a_inh=0.3,
+        )
+
+        self.field = [
+            self.spatial_wm,
+            self.color_attn,
+            self.shape_attn,
+            self.color_space,
+            self.shape_space
+        ]
+
+        self._setup_coupling()
+
+    def _setup_couplings(self):
+        coupling_cs_to_swm = 0.5
+
+
+        def cs_to_spatial():
+            output_2d = self.color_space.get_output()
+            return coupling_cs_to_swm * np.sum(output_2d, axis = 0)
+        
+        self.spatial_wm.add_inputs(cs_to_spatial)
+
+        coupling_ss_to_swm = 0.5
+
+        def ss_to_spatial():
+            output_2d = self.shape_space.get_output()
+            return coupling_ss_to_swm * np.sum(output_2d, axis = 0)
+        
+        self.spatial_wm.add_inputs(ss_to_spatial)
+
+        coupling_ca_to_cs = 0.3
+
+        def ca_to_colorspace():
+            color_out = self.color_attn.get_output()
+            return coupling_ca_to_cs * color_out[:, np.newaxis] * np.ones((1,200))
+        
+        self.color_space.add_input(ca_to_colorspace)
+
+        coupling_sa_to_ss = 0.3
+
+        def sa_to_shapespace():
+            shape_out = self.shape_attn.get_output()
+            return coupling_sa_to_ss * shape_out[:, np.newaxis] * np.ones((1,200))
+        
+        self.shape_space.add_input(sa_to_shapespace)
+
+    def step(self, stimulus = None):
+        spatial_input = stimulus.get('spatial') if stimulus else None
+        color_input = stimulus.get('color') if stimulus else None
+        shape_input = stimulus.get('shape') if stimulus else None
+        color_space_input = stimulus.get('color_space') if stimulus else None
+        shape_space_input = stimulus.get('shape_space') if stimulus else None
+
+        self.spatial_wm.step(spatial_input)
+        self.color_attn.step(color_input)
+        self.shape_attn.step(shape_input)
+        self.color_space.step(color_space_input)
+        self.shape_space.step(shape_space_input)
+
+    def reset(self):
+        for field in self.fields:
+            field.reset()
+
+    def run_trial(self, stimulus, n_encode = 400, n_delay = 25, n_probe = 75):
+        self.reset()
+        history = {'spatial_wm': [], 'color_attn': [], 'shape_attn': []}
+
+        for t in range(n_encode):
+            self.step(stimulus)
+            history['spatial_wm'].append(self.spatial_wm.u.copy())
+
+        for t in range(n_delay):
+            self.step()
+            history['spatial_wm'].append(self.spatial_wm.u.copy())
+
+
+        for t in range(n_probe):
+            self.step()
+            history['spatial_wm'].append(self.spatial_wm.u.copy())
+
+        return history
+    
+
+    def make_stimulus(color1, shape1, pos1, color2, shape2, pos2, field_sizes):
+        
+        n_color, n_space, n_shape = field_sizes
+
+        c1_idx = int(color1 * (n_color -1))
+        c2_idx = int(color2 * (n_color -1))
+        s1_idx = int(shape1 * (n_shape-1))
+        s2_idx = int(shape2 * (n_space-1))
+        p1_idx = int(pos1 * (n_space -1))
+        p2_idx = int(pos2*(n_space -1))
+
+        sigma_s = 3.0
+        amplitude = 6.0
+
+        def gaussian_1d(x, center, sigma, amp):
+            return amp * np.exp(-(x - center)**2 / (2 * sigma**2))
+
+        x_space = np.arange(n_space)
+        x_color = np.arange(n_color)
+        x_shape = np.arange(n_shape)
+
+        # Spatial input: two bumps at stimulus locations
+        spatial = (gaussian_1d(x_space, p1_idx, sigma_s, amplitude) +
+                gaussian_1d(x_space, p2_idx, sigma_s, amplitude))
+
+        # Color input: bumps at the two colors
+        color = (gaussian_1d(x_color, c1_idx, sigma_s, amplitude) +
+                gaussian_1d(x_color, c2_idx, sigma_s, amplitude))
+
+        # Shape input
+        shape = (gaussian_1d(x_shape, s1_idx, sigma_s, amplitude) +
+                gaussian_1d(x_shape, s2_idx, sigma_s, amplitude))
+
+        # 2D binding fields: outer product of feature x space
+        color_space = (np.outer(gaussian_1d(x_color, c1_idx, sigma_s, amplitude),
+                                gaussian_1d(x_space, p1_idx, sigma_s, 1.0)) +
+                    np.outer(gaussian_1d(x_color, c2_idx, sigma_s, amplitude),
+                                gaussian_1d(x_space, p2_idx, sigma_s, 1.0)))
+
+        shape_space = (np.outer(gaussian_1d(x_shape, s1_idx, sigma_s, amplitude),
+                                gaussian_1d(x_space, p1_idx, sigma_s, 1.0)) +
+                    np.outer(gaussian_1d(x_shape, s2_idx, sigma_s, amplitude),
+                                gaussian_1d(x_space, p2_idx, sigma_s, 1.0)))
+
+        return {
+            'spatial': spatial,
+            'color': color,
+            'shape': shape,
+            'color_space': color_space,
+            'shape_space': shape_space
+        }
+    
