@@ -11,15 +11,15 @@ n_neurons = 200
 field = DynamicField(
     name='spatial_wm',
     size=n_neurons,
-    h=-5.0,
-    tau=80.0,
+    h=-5.5,
+    tau=50.0,
     sigma_exc=4.5,
     a_exc=1.9,
     sigma_inh=9.0,
     a_inh=0.55,
-    k_global=0.01,
+    k_global=0.015,
     beta=4.0,
-    noise_std=0.4,
+    noise_std=0.8,
     dt=1.0
 )
 #stimulus
@@ -35,7 +35,7 @@ steps_per_frame = 10  # 10ms per animation frame
 
 n_encode_frames = 400  # 4000ms
 n_delay_frames = 250    # 2500ms middle input added, side inputs removed
-n_probe_frames = 250    # 2500ms middle input removed, ideall 3 stable representations?
+n_probe_frames = 2500    # 2500ms middle input removed, ideall 3 stable representations?
 n_total_frames = n_encode_frames + n_delay_frames + n_probe_frames
 
 

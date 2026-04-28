@@ -39,6 +39,30 @@ class DynamicField():
 
         self.inputs = []
 
+        if self.ndim == 2:
+            print(f"Kernel shape: {self.kernel.shape}")
+            print(f"Field size: {self.size}")
+            self._precompute_kernel_fft()
+
+    def _precompute_kernel_fft(self):
+        # Start with zeros the size of the field
+        padded = np.zeros(self.size)
+        
+        ky, kx = self.kernel.shape
+        cy, cx = ky // 2, kx // 2
+        
+        # Place kernel in the top-left corner of padded array
+        padded[:ky, :kx] = self.kernel
+        
+        # Roll it so the center of the kernel lands at position (0, 0)
+        # This is what FFT expects for circular convolution
+        padded = np.roll(padded, -cy, axis=0)
+        padded = np.roll(padded, -cx, axis=1)
+        
+        self.kernel_fft = np.fft.fft2(padded)
+
+    
+
     def build_kernel (self, sigma_exc, a_exc, sigma_inh, a_inh, k_global, kernel_size=None):
         if self.ndim == 1:
             if kernel_size is not None:
@@ -51,30 +75,34 @@ class DynamicField():
                       - k_global)
             return kernel
         else:
-            half_y, half_x = self.size[0]//2, self.size[1]//2
-            y = np.arrange(-half_y, half_y+1, dtype=float)
-            x = np.arrange(-half_x, half_x+1, dtype=float)
-            Y, X = np.meshgrid(y, x, indexing = 'ij')
+            half = int(3 * max(sigma_exc, sigma_inh))  # 30
+            # Don't let the kernel exceed the field size in either dimension
+            half_y = min(half, self.size[0] // 2 - 1)  # min(30, 24) = 24
+            half_x = min(half, self.size[1] // 2 - 1)  # min(30, 99) = 30
+            
+            y = np.arange(-half_y, half_y + 1, dtype=float)  # 49 elements
+            x = np.arange(-half_x, half_x + 1, dtype=float)  # 61 elements
+            Y, X = np.meshgrid(y, x, indexing='ij')
             r2 = X**2 + Y**2
             kernel = (a_exc * np.exp(-r2 / (2 * sigma_exc**2))
-                      - a_inh * np.exp(-r2 / (2 * sigma_inh**2))
-                      - k_global)
+                    - a_inh * np.exp(-r2 / (2 * sigma_inh**2))
+                    - k_global)
             return kernel
         
 
     def sigmoid(self, x):
         return 1.0 / (1.0 + np.exp(-self.beta *x)) #activation -> firing rate
 
-    def convolution_method(self, activation):
+    def compute_interaction(self, activation):
         output = self.sigmoid(activation)
         if self.ndim == 1:
-            return convolve1d(output, self.kernel, mode="wrap")
+            return convolve1d(output, self.kernel, mode='wrap')
         else:
-            return convolve(output, self.kernel, mode="wrap")
+            return np.real(np.fft.ifft2(np.fft.fft2(output) * self.kernel_fft))
         
 
     def step(self, external_input=None):
-        interaction = self.convolution_method(self.u)
+        interaction = self.compute_interaction(self.u)
 
         total_input = np.zeros_like(self.u)
         if external_input is not None:
@@ -123,6 +151,8 @@ class DynamicField():
         plt.show()
             
 
+
+#gaus helper function
 def gaussian_input(x, center, sigma, amplitude):
     return amplitude * np.exp(-(x - center)**2 / (2 * sigma**2))
 
