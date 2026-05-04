@@ -1,3 +1,3 @@
-# DFT_forever
+# DFT in PYTHON
 
 lets do this thing
