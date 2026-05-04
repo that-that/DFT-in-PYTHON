@@ -5,7 +5,7 @@ from matplotlib.animation import FuncAnimation
 
 field = DynamicField(
      name = 'color__space',
-            size = (200,200),
+            size = (100,200),
             h=-6.0, tau=80.0,
             sigma_exc=4.5, a_exc=0.7,
             sigma_inh=7.0, a_inh=0.35
@@ -14,8 +14,8 @@ field = DynamicField(
 x = np.arange(field.size[0])
 y = np.arange(field.size[1])
 
-stim_blue =  gaussian_input(x, center=140, sigma=3.0, amplitude=8.0)
-stim_red =  gaussian_input(x, center=60, sigma=3.0, amplitude=8.0)
+stim_blue =  gaussian_input(x, center=80, sigma=3.0, amplitude=8.0)
+stim_red =  gaussian_input(x, center=20, sigma=3.0, amplitude=8.0)
 stim_left_space =  gaussian_input(y, center=60, sigma=3.0, amplitude=8.0)
 stim_right_space =  gaussian_input(y, center=140, sigma=3.0, amplitude=8.0)
 
@@ -41,7 +41,7 @@ fig, axes = plt.subplots(3, 1, figsize=(12, 10),
                           gridspec_kw={'height_ratios': [3, 1, 1]})
 fig.suptitle('Color x Space Field', fontsize=14)
 
-# Top: 2D heatmap (what you already have)
+#2D heatmap
 img = axes[0].imshow(field.u, aspect='auto', cmap='RdBu_r',
                       vmin=-8, vmax=15, origin='lower')
 axes[0].set_xlabel('Space')
@@ -65,7 +65,6 @@ axes[1].axvline(x=60, color='green', linestyle=':', alpha=0.5, label='Left (60)'
 axes[1].axvline(x=140, color='orange', linestyle=':', alpha=0.5, label='Right (140)')
 axes[1].legend()
 
-# Bottom: color output (collapse across space)
 x_color = np.arange(field.size[0])
 line_color, = axes[2].plot(x_color, np.zeros(field.size[0]), 'r-', linewidth=2)
 axes[2].set_ylim(-0.1, 1.5)
@@ -130,8 +129,8 @@ def update(frame):
     return img, line_space, line_color, time_text
 
 
-ani = FuncAnimation(fig, update, frames=n_total_frames, interval=30, blit=False)
-#plt.show()
+ani = FuncAnimation(fig, update, frames=n_total_frames, interval=30, blit=False, repeat = False)
+plt.show()
 
 # Optional: save
-ani.save('color_space_dft.mp4', writer='ffmpeg', fps=30, dpi=150)
+#ani.save('color_space_dft.gif', writer='pillow', fps=30, dpi=150)

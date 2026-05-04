@@ -17,7 +17,7 @@ class QuadTaskModel:
         #need to understand how color attn should be different from other fields
         self.color_attn = DynamicField(
             name = 'color_attn',
-            size = 50,
+            size = 100,
             h=-8.0, tau=60.0, #lower resting state, taller peaks? 
             sigma_exc=3.0, a_exc=0.6,
             sigma_inh=8.0, a_inh=0.25
@@ -25,7 +25,7 @@ class QuadTaskModel:
 
         self.shape_attn = DynamicField(
             name = 'shape_attn',
-            size = 50,
+            size = 100,
             h=-8.0, tau=60.0,
             sigma_exc=3.0, a_exc=0.6,
             sigma_inh=8.0, a_inh=0.25,
@@ -33,18 +33,18 @@ class QuadTaskModel:
 
         self.color_space = DynamicField(
             name = 'color__space',
-            size = (50,200),
+            size = (100,200),
             h=-6.0, tau=80.0,
-            sigma_exc=4.0, a_exc=0.7,
-            sigma_inh=10.0, a_inh=0.3
+            sigma_exc=4.5, a_exc=0.7,
+            sigma_inh=7.0, a_inh=0.35
         )
 
         self.shape_space = DynamicField(
             name = 'shape_space',
-            size = (50, 200),
+            size = (100, 200),
             h=-6.0, tau=80.0,
-            sigma_exc=4.0, a_exc=0.7,
-            sigma_inh=10.0, a_inh=0.3,
+            sigma_exc=4.5, a_exc=0.7,
+            sigma_inh=7.0, a_inh=0.35,
         )
 
         self.field = [
@@ -55,7 +55,7 @@ class QuadTaskModel:
             self.shape_space
         ]
 
-        self._setup_coupling()
+        self._setup_couplings()
 
     def _setup_couplings(self):
         coupling_cs_to_swm = 0.5
@@ -65,7 +65,7 @@ class QuadTaskModel:
             output_2d = self.color_space.get_output()
             return coupling_cs_to_swm * np.sum(output_2d, axis = 0)
         
-        self.spatial_wm.add_inputs(cs_to_spatial)
+        self.spatial_wm.add_input(cs_to_spatial)
 
         coupling_ss_to_swm = 0.5
 
@@ -73,7 +73,7 @@ class QuadTaskModel:
             output_2d = self.shape_space.get_output()
             return coupling_ss_to_swm * np.sum(output_2d, axis = 0)
         
-        self.spatial_wm.add_inputs(ss_to_spatial)
+        self.spatial_wm.add_input(ss_to_spatial)
 
         coupling_ca_to_cs = 0.3
 
@@ -105,7 +105,7 @@ class QuadTaskModel:
         self.shape_space.step(shape_space_input)
 
     def reset(self):
-        for field in self.fields:
+        for field in self.field:
             field.reset()
 
     def run_trial(self, stimulus, n_encode = 400, n_delay = 25, n_probe = 75):
@@ -128,14 +128,14 @@ class QuadTaskModel:
         return history
     
 
-    def make_stimulus(color1, shape1, pos1, color2, shape2, pos2, field_sizes):
+    def make_stimulus(self, color1, shape1, pos1, color2, shape2, pos2, field_sizes):
         
         n_color, n_space, n_shape = field_sizes
 
         c1_idx = int(color1 * (n_color -1))
         c2_idx = int(color2 * (n_color -1))
         s1_idx = int(shape1 * (n_shape-1))
-        s2_idx = int(shape2 * (n_space-1))
+        s2_idx = int(shape2 * (n_shape-1))
         p1_idx = int(pos1 * (n_space -1))
         p2_idx = int(pos2*(n_space -1))
 
@@ -179,4 +179,15 @@ class QuadTaskModel:
             'color_space': color_space,
             'shape_space': shape_space
         }
+    
+
+
+model_test = QuadTaskModel()
+
+print(model_test.make_stimulus(20,20, 40, 80, 80, 160, (100, 200, 100)))
+
+
+
+
+
     

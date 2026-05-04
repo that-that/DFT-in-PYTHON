@@ -43,7 +43,7 @@ fig, axes = plt.subplots(3, 1, figsize=(12, 8),
                           gridspec_kw={'height_ratios': [2, 1, 1]})
 fig.suptitle('Spatial WM field', fontsize=14)
 
-# Top: field activation
+# top: field activation
 line_u, = axes[0].plot(x, field.u, 'b-', linewidth=2, label='Activation u(x)')
 axes[0].axhline(y=0, color='gray', linestyle='--', alpha=0.5, label='Threshold')
 axes[0].axhline(y=field.h, color='red', linestyle=':', alpha=0.5,
@@ -53,20 +53,20 @@ axes[0].set_ylabel('Activation')
 axes[0].set_xlabel('Neuron position')
 axes[0].legend(loc='upper right')
 
-# Middle: external input
+# middle: external input
 line_stim, = axes[1].plot(x, stimulus, 'g-', linewidth=2)
 axes[1].set_ylim(-1, 10)
 axes[1].set_ylabel('Input')
 axes[1].set_title('External Input')
 
-# Bottom: output firing rate
+# bottom: output firing rate
 line_out, = axes[2].plot(x, field.get_output(), 'r-', linewidth=2)
 axes[2].set_ylim(-0.1, 1.1)
 axes[2].set_ylabel('Firing rate')
 axes[2].set_title('Output g(u)')
 
 
-# Phase label
+# phase label
 time_text = axes[0].text(0.02, 0.95, '', transform=axes[0].transAxes,
                           fontsize=12, fontweight='bold',
                           verticalalignment='top',
@@ -75,9 +75,7 @@ time_text = axes[0].text(0.02, 0.95, '', transform=axes[0].transAxes,
 plt.tight_layout()
 
 
-# ============================================================
-# ANIMATION LOGIC
-# ============================================================
+# animation logic
 def get_phase(frame):
     if frame < n_encode_frames:
         elapsed = frame * steps_per_frame
@@ -93,11 +91,11 @@ def get_phase(frame):
 def update(frame):
     phase_label, current_input = get_phase(frame)
 
-    # Run multiple timesteps per animation frame
+    # multiple timesteps per frame
     for _ in range(steps_per_frame):
         field.step(current_input)
 
-    # Update all three plots
+    # update all three plots
     line_u.set_ydata(field.u)
     line_out.set_ydata(field.get_output())
 
@@ -106,10 +104,10 @@ def update(frame):
     else:
         line_stim.set_ydata(np.zeros(n_neurons))
 
-    # Phase label
+    # phase label
     time_text.set_text(phase_label)
 
-    # Color activation line by phase
+    # color activation line by phase
     if 'ENCODING' in phase_label:
         line_u.set_color('blue')
     elif 'DELAY' in phase_label:
