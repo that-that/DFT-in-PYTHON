@@ -175,7 +175,9 @@ class QuadTaskModel:
 
 model_test = QuadTaskModel()
 
-print(model_test.make_stimulus(20,20, 40, 80, 80, 160, (100, 200, 100)))
+stim = model_test.make_stimulus("test", 0.2, 0.2, 0.2, (100, 200, 100))
+print(f"Created stimulus: {stim['name']}")
+print(f"Spatial peak at idx {np.argmax(stim['spatial'])}")
 
 
 
