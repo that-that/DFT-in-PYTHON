@@ -161,7 +161,7 @@ class QuadTaskModel:
         shape = (gaussian_1d(x_shape, s1_idx, sigma_s, amplitude) +
                 gaussian_1d(x_shape, s2_idx, sigma_s, amplitude))
 
-        # 2D binding fields: outer product of feature x space
+        # 
         color_space = (np.outer(gaussian_1d(x_color, c1_idx, sigma_s, amplitude),
                                 gaussian_1d(x_space, p1_idx, sigma_s, 1.0)) +
                     np.outer(gaussian_1d(x_color, c2_idx, sigma_s, amplitude),

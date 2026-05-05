@@ -45,17 +45,16 @@ class DynamicField():
             self._precompute_kernel_fft()
 
     def _precompute_kernel_fft(self):
-        # Start with zeros the size of the field
+        # thank you gpt for this
         padded = np.zeros(self.size)
         
         ky, kx = self.kernel.shape
         cy, cx = ky // 2, kx // 2
         
-        # Place kernel in the top-left corner of padded array
+        #
         padded[:ky, :kx] = self.kernel
         
-        # Roll it so the center of the kernel lands at position (0, 0)
-        # This is what FFT expects for circular convolution
+        # 
         padded = np.roll(padded, -cy, axis=0)
         padded = np.roll(padded, -cx, axis=1)
         
@@ -75,13 +74,13 @@ class DynamicField():
                       - k_global)
             return kernel
         else:
-            half = int(3 * max(sigma_exc, sigma_inh))  # 30
-            # Don't let the kernel exceed the field size in either dimension
-            half_y = min(half, self.size[0] // 2 - 1)  # min(30, 24) = 24
-            half_x = min(half, self.size[1] // 2 - 1)  # min(30, 99) = 30
+            half = int(3 * max(sigma_exc, sigma_inh))
+            # dont let kernel exceed dimensions
+            half_y = min(half, self.size[0] // 2 - 1) 
+            half_x = min(half, self.size[1] // 2 - 1) 
             
-            y = np.arange(-half_y, half_y + 1, dtype=float)  # 49 elements
-            x = np.arange(-half_x, half_x + 1, dtype=float)  # 61 elements
+            y = np.arange(-half_y, half_y + 1, dtype=float)  
+            x = np.arange(-half_x, half_x + 1, dtype=float)  
             Y, X = np.meshgrid(y, x, indexing='ij')
             r2 = X**2 + Y**2
             kernel = (a_exc * np.exp(-r2 / (2 * sigma_exc**2))
