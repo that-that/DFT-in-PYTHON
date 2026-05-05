@@ -128,16 +128,13 @@ class QuadTaskModel:
         return history
     
 
-    def make_stimulus(self, color1, shape1, pos1, color2, shape2, pos2, field_sizes):
+    def make_stimulus(self, name, color1, shape1, pos1, field_sizes):
         
         n_color, n_space, n_shape = field_sizes
 
         c1_idx = int(color1 * (n_color -1))
-        c2_idx = int(color2 * (n_color -1))
         s1_idx = int(shape1 * (n_shape-1))
-        s2_idx = int(shape2 * (n_shape-1))
         p1_idx = int(pos1 * (n_space -1))
-        p2_idx = int(pos2*(n_space -1))
 
         sigma_s = 3.0
         amplitude = 6.0
@@ -150,29 +147,23 @@ class QuadTaskModel:
         x_shape = np.arange(n_shape)
 
         # Spatial input: two bumps at stimulus locations
-        spatial = (gaussian_1d(x_space, p1_idx, sigma_s, amplitude) +
-                gaussian_1d(x_space, p2_idx, sigma_s, amplitude))
+        spatial = gaussian_1d(x_space, p1_idx, sigma_s, amplitude)
 
         # Color input: bumps at the two colors
-        color = (gaussian_1d(x_color, c1_idx, sigma_s, amplitude) +
-                gaussian_1d(x_color, c2_idx, sigma_s, amplitude))
+        color = gaussian_1d(x_color, c1_idx, sigma_s, amplitude)
 
         # Shape input
-        shape = (gaussian_1d(x_shape, s1_idx, sigma_s, amplitude) +
-                gaussian_1d(x_shape, s2_idx, sigma_s, amplitude))
+        shape = gaussian_1d(x_shape, s1_idx, sigma_s, amplitude)
 
         # 
-        color_space = (np.outer(gaussian_1d(x_color, c1_idx, sigma_s, amplitude),
-                                gaussian_1d(x_space, p1_idx, sigma_s, 1.0)) +
-                    np.outer(gaussian_1d(x_color, c2_idx, sigma_s, amplitude),
-                                gaussian_1d(x_space, p2_idx, sigma_s, 1.0)))
+        color_space = np.outer(gaussian_1d(x_color, c1_idx, sigma_s, amplitude),
+                                gaussian_1d(x_space, p1_idx, sigma_s, 1.0))
 
-        shape_space = (np.outer(gaussian_1d(x_shape, s1_idx, sigma_s, amplitude),
-                                gaussian_1d(x_space, p1_idx, sigma_s, 1.0)) +
-                    np.outer(gaussian_1d(x_shape, s2_idx, sigma_s, amplitude),
-                                gaussian_1d(x_space, p2_idx, sigma_s, 1.0)))
+        shape_space = np.outer(gaussian_1d(x_shape, s1_idx, sigma_s, amplitude),
+                                gaussian_1d(x_space, p1_idx, sigma_s, 1.0))
 
         return {
+            'name': name,
             'spatial': spatial,
             'color': color,
             'shape': shape,
